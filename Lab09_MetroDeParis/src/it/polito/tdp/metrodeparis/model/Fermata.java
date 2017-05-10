@@ -13,6 +13,10 @@ public class Fermata {
 		this.nome = nome;
 		this.coords = coords;
 	}
+	public Fermata(int idFermata, LatLng coords) {
+		this.idFermata = idFermata;
+		this.coords = coords;
+	}
 	
 	public Fermata(int idFermata) {
 		this.idFermata = idFermata;

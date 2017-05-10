@@ -38,4 +38,37 @@ public class MetroDAO {
 
 		return fermate;
 	}
+
+	public List<CoppiaFermata> listCoppieFermate() {
+
+		final String sql = "SELECT id_StazP AS sp, id_StazA AS sa, A.nome AS pn, B.nome AS an, A.coordx AS px, A.coordy AS py, B.coordx AS ax, B.coordy AS ay, linea.velocita AS v FROM connessione, fermata AS A, fermata AS B, linea WHERE id_stazP=A.id_fermata AND id_stazA=B.id_fermata AND connessione.id_linea=linea.id_linea ORDER BY sa ASC";
+		
+		List<CoppiaFermata> coppiaFermata = new ArrayList<CoppiaFermata>();
+
+		try {
+			Connection conn = DBConnect.getInstance().getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				
+				CoppiaFermata f = new CoppiaFermata(
+						new Fermata(rs.getInt("sp"),rs.getString("pn") ,new LatLng(rs.getDouble("px"), rs.getDouble("py"))), 
+						new Fermata(rs.getInt("sa"),rs.getString("an") ,new LatLng(rs.getDouble("ax"), rs.getDouble("ay"))), 
+						rs.getDouble("v")
+						);
+				
+				coppiaFermata.add(f);
+			}
+
+			st.close();
+			conn.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Errore di connessione al Database.");
+		}
+
+		return coppiaFermata;
+	}
 }
