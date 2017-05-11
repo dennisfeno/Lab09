@@ -6,13 +6,10 @@ import java.util.Date;
 import java.util.List;
 
 import org.jgrapht.Graphs;
-import org.jgrapht.UndirectedGraph;
 import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPath;
-import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DefaultWeightedEdge;
-import org.jgrapht.graph.SimpleGraph;
-import org.jgrapht.graph.SimpleWeightedGraph;
+import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 import it.polito.tdp.metrodeparis.dao.CoppiaFermata;
 import it.polito.tdp.metrodeparis.dao.MetroDAO;
 
@@ -36,7 +33,7 @@ public class Model {
 
 	}
 	
-	private WeightedGraph<Fermata,DefaultWeightedEdge> getGrafo() {
+	public WeightedGraph<Fermata,DefaultWeightedEdge> getGrafo() {
 		if(this.graph==null){
 			this.creaGrafo();
 		}
@@ -44,13 +41,14 @@ public class Model {
 	}
 	
 	public void creaGrafo() {
-		this.graph = new SimpleWeightedGraph<>(DefaultWeightedEdge.class) ;
+		this.graph = new SimpleDirectedWeightedGraph<>(DefaultWeightedEdge.class) ;
 		
 		MetroDAO dao = new MetroDAO() ;
 		
 		// crea i vertici del grafo
 		Graphs.addAllVertices(graph, this.getFermate()) ;
-			
+		
+		// aggiungi gli edges di ciascun collegamento da una fermata all'altra
 		for(CoppiaFermata cf : dao.listCoppieFermate()) {
 						
 				DefaultWeightedEdge d = new DefaultWeightedEdge();
@@ -61,8 +59,25 @@ public class Model {
 				graph.setEdgeWeight(d, cf.calcolaTempo() );
 //				System.out.println(d + "time" + cf.calcolaTempo());
 				}
-			
 		}
+		
+		//aggiugni gli edges di ciascun collegamento nella stessa fermata. 
+		
+		for(Fermata i : this.fermate){
+			for(Fermata j : this.fermate){
+				if(i.getNome().compareTo(j.getNome())==0 && !j.equals(i)){ // se sono la stessa fermata, ma non lo stesso vertice..
+					
+					DefaultWeightedEdge d = new DefaultWeightedEdge();
+					
+					d = graph.addEdge(i, j);
+					
+					if(d!=null){
+						graph.setEdgeWeight(d, dao.getTempoPassaggioLinea(j) );
+					}
+				}
+			}	
+		}
+		
 	}
 
 	public List<Fermata> getPercorso(Fermata f1, Fermata f2) {
@@ -74,7 +89,11 @@ public class Model {
 		
 		Fermata previous = f1 ;
 		path.add(previous) ;
-
+		
+		if ( dij.getPathEdgeList() == null) {
+			return null ; 
+		}
+//		System.out.println("passo di qui");
 		for (DefaultWeightedEdge d : dij.getPathEdgeList()){
 			
 			previous = Graphs.getOppositeVertex(this.getGrafo(), d, previous) ;
